@@ -1,4 +1,6 @@
-import Book from './Book'
+import React from 'react';
+import BookLibrary from './BookLibrary'
+import Header from './Header';
 import './App.css';
 
 function App() {
@@ -6,7 +8,8 @@ function App() {
 
   return (
     <div className="App">
-      <Book />
+      <Header />
+      <BookLibrary />
     </div>
   );
 }
