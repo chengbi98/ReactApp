@@ -18,6 +18,8 @@ function App() {
           </Route>
           <Route path="/create" element={<Book />} >
           </Route>
+          <Route path="/edit/:id" element={<Book />} >
+          </Route>
 
         </Routes>
       </div>

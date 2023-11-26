@@ -2,6 +2,31 @@ import React from 'react';
 import './Book.css';
 import axios from 'axios';
 import { Navigate } from 'react-router-dom';
+import FlashMessage from './FlashMessage';
+
+import {
+    useLocation,
+    useNavigate,
+    useParams,
+  } from "react-router-dom";
+//import { param } from '../../server/routes/books';
+  
+  function withRouter(Component) {
+    function ComponentWithRouterProp(props) {
+      let location = useLocation();
+      let navigate = useNavigate();
+      let params = useParams();
+      return (
+        <Component
+          {...props}
+          router={{ location, navigate, params, props }}
+        />
+      );
+    }
+  
+    return ComponentWithRouterProp;
+  }
+
 
 class Book extends React.Component {
 
@@ -23,14 +48,50 @@ class Book extends React.Component {
     constructor(props) {
         super(props);
 
+//        let params = useParams();
+//        let bookId = params.id;
+        console.log(props);
+
+        const bookId = window.location.href.split('/')[4]
+        console.log(bookId);
+
+//        let bookId = props.params.id;
+
         this.state = {
+            id: bookId, // props.match.params.id,
             author: '',
             title: '',
             published: '',
+            warningCount: 0,
         }
 
         this.handleChange = this.handleChange.bind(this);
         this.handleSubmit = this.handleSubmit.bind(this);
+    }
+
+    componentDidMount() {
+        if(!this.state.id) {
+            return;
+        }
+        axios.get(process.env.REACT_APP_SERVER_URL + '/' + this.state.id)
+            .then(result => {
+                let { author, title, published } = result.data[0];
+
+                this.setState( { 
+                    author: author,
+                    title: title,
+                    published: published.substr(0, 4)
+                });
+            })
+            .catch(error => {
+                console.log(error);
+                this.warning("Unable to load book.");
+            });
+    }
+
+    warning(message) {
+        this.setState({ message: message, warningCount: this.state.warningCount + 1 });
+
     }
 
     validate() {
@@ -44,20 +105,12 @@ class Book extends React.Component {
 
             if(!value.match(rule)) {
                 console.log(field, rule, message, value);
-                this.showMessage(message);
+                this.warning(message);
                 return false;
             }
         }
 
         return true;
-    }
-
-    showMessage(message) {
-        this.setState({ message: message});
-
-        setTimeout(()=>{
-            this.setState({message: ''});
-        }, 3000);
     }
 
     handleSubmit(event) {
@@ -70,22 +123,33 @@ class Book extends React.Component {
         }
 
         console.log(this.state);
-        let { author, title, published } = this.state;
+        let { id, author, title, published } = this.state;
         published += '-01-01';
 
         const book = {
+            id: id,
             author: author,
             title: title,
             published: published,
         }
 
-        axios.post(process.env.REACT_APP_SERVER_URL, book)
+        let updateFunc = axios.post;
+        let url = process.env.REACT_APP_SERVER_URL;
+
+        if(id) {
+            updateFunc = axios.put;
+            url += '/' + id;
+        }
+
+        //axios.post(process.env.REACT_APP_SERVER_URL, book)
+        updateFunc(url, book)
             .then(result => {
                 //console.log(result);
                 this.setState( { created: true } );
             })
             .catch(error =>{
                 console.log(error);
+                this.warning("Unable to save book")
             });
 
     }
@@ -117,7 +181,7 @@ class Book extends React.Component {
                     <input value={this.state.published} onChange={this.handleChange} type='text' name='published' id='published'/>
                     <input type='submit' value="Save"/>
 
-                    <div className='message'>{this.state.message}</div>
+                    <FlashMessage key={this.state.warningCount} message={this.state.message} duration='3000'/>
                 </form>
 
             </div>
@@ -125,4 +189,4 @@ class Book extends React.Component {
     }
 
 }
-export default Book;
+export default withRouter(Book);

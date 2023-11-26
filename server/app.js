@@ -16,6 +16,24 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
 
 app.use(cors());
+
+/* Testing error handling */
+/*
+app.use(function(req, res, next) {
+  setTimeout(next, 1000);
+});
+
+app.use(function(req, res, next) {
+//  if(req.method === 'DELETE') {
+  if(req.url.match(/\d+/)) {
+    res.sendStatus(500);
+  }
+  else {
+    next();
+  }
+});
+*/
+
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
